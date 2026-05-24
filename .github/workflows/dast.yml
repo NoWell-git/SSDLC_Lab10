@@ -1,0 +1,47 @@
+name: DAST
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  issues: write
+
+jobs:
+  dast:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      - name: Start application
+        run: docker-compose up -d
+
+      - name: Wait for app to be ready
+        run: |
+          for i in {1..30}; do
+            curl -s http://localhost:8081/login && break
+            sleep 2
+          done
+
+      - name: Run ZAP scan via Docker (direct)
+        run: |
+          touch report_html.html
+          chmod 666 report_html.html
+          docker run --network=host -v $(pwd):/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-full-scan.py -t http://localhost:8081 \
+            -r /zap/wrk/report_html.html -a || true
+
+      - name: Upload DAST report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dast-report
+          path: report_html.html
+        if: always()
