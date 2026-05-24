@@ -1,0 +1,52 @@
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    container_name: lab3_postgres
+    environment:
+      POSTGRES_DB: pc_components
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    networks:
+      - appnet
+
+  pc-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: pc-app
+    env_file:
+      - config.env
+    environment:
+      - WEB_MODE=1
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      - appnet
+
+  adminer:
+    image: adminer
+    restart: always
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    networks:
+      - appnet
+
+networks:
+  appnet:
+    driver: bridge
+
+volumes:
+  pgdata:
