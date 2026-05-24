@@ -1,4 +1,4 @@
-// SAST_scan
+// Full_scan
 package main
 
 import (
