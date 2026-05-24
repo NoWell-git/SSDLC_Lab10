@@ -1,4 +1,4 @@
-// SAST_scan
+// TEST
 package main
 
 import (
