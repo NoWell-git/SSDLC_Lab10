@@ -1,4 +1,4 @@
-// SAST scan
+// SAST_scan
 package main
 
 import (
