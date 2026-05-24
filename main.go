@@ -1,4 +1,4 @@
-// TEST
+// Full_scan
 package main
 
 import (
