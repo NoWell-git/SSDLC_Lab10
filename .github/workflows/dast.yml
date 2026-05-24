@@ -31,7 +31,7 @@ jobs:
         run: |
           docker run --network=host -v $(pwd):/zap/wrk/:rw \
             ghcr.io/zaproxy/zaproxy:stable \
-            zap-full-scan.py -t http://127.0.0.1:8081 \
+            zap-full-scan.py -t http://host.docker.internal:8081 \
             -r report_html.html -a -m 2 -t 120
 
       - name: Upload DAST report
