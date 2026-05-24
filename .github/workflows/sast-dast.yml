@@ -1,0 +1,57 @@
+name: SAST + DAST
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  issues: write
+
+jobs:
+  sast:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Install gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+      - name: Run gosec
+        run: gosec -no-fail -fmt=html -out=gosec-report.html ./...
+      - name: Upload SAST report
+        uses: actions/upload-artifact@v4
+        with:
+          name: sast-report-main
+          path: gosec-report.html
+
+  dast:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Start app with Docker Compose
+        run: docker-compose up -d
+      - name: Wait for app
+        run: |
+          for i in {1..30}; do
+            curl -s http://localhost:8081/login && break
+            sleep 2
+          done
+      - name: Run ZAP scan via Docker (direct)
+        run: |
+          touch report_html.html
+          chmod 666 report_html.html
+          docker run --network=host -v $(pwd):/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-full-scan.py -t http://localhost:8081 \
+            -r /zap/wrk/report_html.html -a || true
+      - name: Upload DAST report for main
+        uses: actions/upload-artifact@v4
+        with:
+          name: dast-report-main
+          path: report_html.html
+        if: always()
