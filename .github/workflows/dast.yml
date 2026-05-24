@@ -32,10 +32,13 @@ jobs:
 
       - name: Run ZAP scan via Docker (direct)
         run: |
+          # Создаём файл отчёта с правами на запись для всех
+          touch report_html.html
+          chmod 666 report_html.html
           docker run --network=host -v $(pwd):/zap/wrk/:rw \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-full-scan.py -t http://localhost:8081 \
-            -r report_html.html -a
+            -r /zap/wrk/report_html.html -a
 
       - name: Upload DAST report
         uses: actions/upload-artifact@v4
